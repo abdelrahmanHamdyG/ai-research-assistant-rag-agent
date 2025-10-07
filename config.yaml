@@ -1,0 +1,21 @@
+concepts:
+  - id: C31972630
+    domain: cv
+  - id: C154945302
+    domain: ai
+  - id: C119857082
+    domain: ml
+  - id: C204321447
+    domain: nlp
+  - id: C66322947
+    domain: transformer
+  - id: C124504099
+    domain: image segmentation
+  - id: C108583219
+    domain: deep learning 
+  
+
+sources:
+  openalex:
+    api_url: "https://api.openalex.org/works"
+
