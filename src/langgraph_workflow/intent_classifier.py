@@ -26,7 +26,7 @@ def intent_classifier_node(state: Dict[str, Any], llm=None) -> Dict[str, Any]:
     Updates the shared state.
     """
 
-    print(" we are classifying intent ")
+    # print(" we are classifying intent ")
     if llm is None:
         llm = init_model()
 
@@ -80,18 +80,18 @@ Query:
         
         intent_info = parser.parse(response.content)
     except Exception:
-        print("here is the exception")
+        # print("here is the exception")
         intent_info = IntentInfo(intent="out_of_scope", domains=[], period=None, specific_paper=None)
 
     # Safety check  s
-    print(intent_info.intent)
+    # print(intent_info.intent)
     if intent_info.intent not in INTENTS:
-        print(f"yes it's not in it's actually {intent_info.intent}")
+        # print(f"yes it's not in it's actually {intent_info.intent}")
         intent_info.intent = "out_of_scope"
     intent_info.domains = [d for d in intent_info.domains if d in DOMAINS]
 
     
     state["intent_info"] = intent_info
-    print("intent_info is ",intent_info)
+    # print("intent_info is ",intent_info)
     state["last_query"] = query
     return state

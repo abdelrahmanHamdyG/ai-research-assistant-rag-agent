@@ -2,6 +2,7 @@
 import os
 from chromadb import PersistentClient
 from typing import List
+from datetime import datetime, timedelta
 
 
 def init_chroma(db_path="embeddings", collection_name="paper"):
@@ -22,8 +23,8 @@ def init_chroma(db_path="embeddings", collection_name="paper"):
 def get_papers_abstract(date:int,domains:List[str],db_path: str = "embeddings", collection_name: str = "paper"):
 
     collection=init_chroma(db_path,collection_name)
-    print(date)
-    print("******")
+    #print(date)
+    #print("******")
     results = collection.get(
         where={
                 "$and": [
@@ -36,7 +37,7 @@ def get_papers_abstract(date:int,domains:List[str],db_path: str = "embeddings", 
     )
     
     
-    print(f"Total matching chunks: {len(results['ids'])}")
+    #print(f"Total matching chunks: {len(results['ids'])}")
     return results
     
         
@@ -77,42 +78,45 @@ def query_embeddings(
     """
     collection = init_chroma(db_path=db_path, collection_name=collection_name)
 
-    print(f"🔍 Searching for: {query_text}")
+    #print(f"🔍 Searching for: {query_text}")
     results = collection.query(
         query_texts=[query_text],
         n_results=n_results,
         where={ "is_abstract": { "$in": is_abstract} }   # <-- filter here
 
     )
-    print("result size is ",len(results["documents"]))
+    #print("result size is ",len(results["documents"]))
     return results
 
 
-def pretty_print(results: dict):
-    """
-    Nicely display the query results.
-    """
-    docs = results.get("documents", [[]])[0]
-    metas = results.get("metadatas", [[]])[0]
-    distances = results.get("distances", [[]])[0]
 
-    for i, (doc, meta, dist) in enumerate(zip(docs, metas, distances), start=1):
-        print("=" * 60)
-        print(f"Result #{i}")
-        print(f"Distance: {dist:.4f}")
-        print(f"Title   : {meta.get('title')}")
-        print(f"Authors : {', '.join(meta.get('authors', []))}")
-        print(f"DOI     : {meta.get('doi')}")
-        print(f"Source  : {meta.get('source_id')}")
-        print("---- Chunk Text ----")
-        print(doc[:500] + ("..." if len(doc) > 500 else ""))
+
+def remove_old_papers(days_old: int = 15, db_path="embeddings", collection_name="paper"):
+    """
+    Remove all papers from Chroma whose publication date is older than N days.
+    """
+    collection = init_chroma(db_path, collection_name)
+    cutoff_date = datetime.now() - timedelta(days=days_old)
+    cutoff_int = int(cutoff_date.strftime("%Y%m%d"))
+
+    #print(f"🧹 Removing papers published before {cutoff_int} ({days_old} days ago)...")
+
+    # Delete based on date_publushed_int field in metadata
+    deleted_count = collection.delete(
+        where={"date_publushed_int": {"$lt": cutoff_int}}
+    )
+
+    #print(f"✅ Removed {len(deleted_count) if deleted_count else 0} old chunks from the DB.")
+    return deleted_count
+
+
 
 
 def main():
     # 🔧 Example usage
     query = input("Enter your search query: ").strip()
     results = query_embeddings(query_text=query, n_results=5)
-    pretty_print(results)
+    
 
 
 if __name__ == "__main__":

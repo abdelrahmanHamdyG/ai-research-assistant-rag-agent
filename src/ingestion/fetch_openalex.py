@@ -1,3 +1,4 @@
+from ast import List
 import requests
 import yaml
 from requests.adapters import HTTPAdapter
@@ -5,6 +6,7 @@ import os
 import re 
 from datetime import datetime, timedelta
 import json
+from tqdm import tqdm 
 import time
 import arxiv
 
@@ -245,7 +247,7 @@ def download_pdf(pdf_url: str, name: str, out_dir="data/raw",
                     if time.time() - start > max_time:
                         return "timeout"
 
-        print(f"✅ PDF saved: {filename}")
+        
         return "saved"
 
     except Exception as e:
@@ -289,7 +291,7 @@ def fetch_paper_by_concept(id,domain,minimum_citations=400,max_results=1,recent_
     papers=[]
     response=requests.get(base_url,params=params).json()
     response_results=response["results"]
-    print(f"Found {len(response_results)} papers for {domain}")
+    # print(f"Found {len(response_results)} papers for {domain}")
 
     for paper in response.get("results", []):
         if paper["id"] in papers_ids:
@@ -307,58 +309,39 @@ def fetch_paper_by_concept(id,domain,minimum_citations=400,max_results=1,recent_
             "name":safe_name(paper["display_name"])
         }
         
-        if metadata["title"]:
-            print(f"\n📖 {metadata['title'][:80]}...")
+        
 
         if is_primary_concept(paper,id):
-            print("✅ Primary concept")
+            
             
             pdf_url = None
             
             # Try 3 methods only - fast and effective
-            print("🔍 OpenAlex...", end=" ")
+            
             pdf_url = find_best_pdf_url(paper)
-            if pdf_url:
-                print("✅")
-            else:
-                print("❌")
-                print("🔍 arXiv...", end=" ")
+            if not pdf_url:
                 pdf_url = get_arxiv_link(paper)
-                if pdf_url:
-                    print("✅")
-                else:
-                    print("❌")
-                    print("🔍 Semantic Scholar...", end=" ")
+                if not pdf_url:
                     pdf_url = get_semantic_scholar_pdf(paper)
-                    if pdf_url:
-                        print("✅")
-                    else:
-                        print("❌")
+                    
             
             if pdf_url:
                 download_result = download_pdf(pdf_url, metadata["source_id"],out_dir=out_dir)
                 if download_result == "saved":
                     papers_ids.add(metadata["source_id"])
                     papers.append(metadata)
-                    print(f"🎉 SUCCESS!")
-                else:
-                    print(f"❌ Download failed: {download_result}")
-            else:
-                print("❌ No PDF found")
-        else:
-            print("❌ Not primary concept")
-
+                
     print(f"\n📊 {domain}: {len(papers)} papers collected")
     return papers
 
 def fetch_recent_papers(days_back=7,number_of_citations=0):
     fetch_all_papers(minimum_citations=number_of_citations,max_results=50,recent_days=days_back,file_path="metadata_recent.json",out_dir="data/raw_recent")
 
-def fetch_all_papers(minimum_citations=5000,max_results=10,file_path="metadata.json",recent_days=None,out_dir="data/raw"):
+def fetch_all_papers(minimum_citations=5000,max_results=30,file_path="metadata.json",recent_days=None,out_dir="data/raw"):
     all_papers=[]
     concepts=config["concepts"]
 
-    for item in concepts:
+    for item in tqdm(concepts):
         id=item["id"]
         domain=item["domain"]
         domain_papers=fetch_paper_by_concept(id=id,domain=domain,minimum_citations=minimum_citations,max_results=max_results,recent_days=recent_days,out_dir=out_dir)
@@ -368,11 +351,15 @@ def fetch_all_papers(minimum_citations=5000,max_results=10,file_path="metadata.j
     with open(f"data/processed/{file_path}", "w", encoding="utf-8") as f:
         json.dump(all_papers, f, ensure_ascii=False, indent=2)
 
-    print(f"\n🎯 TOTAL: {len(all_papers)} papers collected successfully")
+    
 
-def main():
-    # fetch_all_papers()
-    fetch_recent_papers()
+def fetch_papers(kind=[True,True]):
+    if kind[0]:
+        print("fetching important papers")
+        fetch_all_papers()
+    if kind[1]:
+        print("fetching recent papers")
+        fetch_recent_papers()
 
 if __name__=="__main__":
-    main()
+    fetch_papers()

@@ -4,6 +4,7 @@ from typing import List
 from PyPDF2 import PdfReader
 import nltk
 import fitz
+from tqdm import tqdm
 import re 
 
 from nltk.tokenize import sent_tokenize
@@ -95,7 +96,6 @@ def extract_text_from_pdf(pdf_path):
             
         return "\n".join(text)
     except Exception as e:
-        print(f"⚠️ Failed to extract {pdf_path}: {e}")
         return ""
 
 
@@ -136,18 +136,16 @@ def process_pdfs(metadata_path,data_path,out_path):
 
     all_chunks = []
     x=0
-    for metadata in pdfs_metadata:
+    for metadata in tqdm(pdfs_metadata):
         x+=1
         
         pdf_path=os.path.join(data_path,metadata["source_id"]+".pdf")
 
         if not os.path.exists(pdf_path):
-            print(f"file doesn't exist {pdf_path}")
             continue
 
         abstract_text = extract_abstract(pdf_path, max_chars_if_not_found=2000)
-        if x==2:
-            print(abstract_text)
+        
         raw_text=extract_text_from_pdf(pdf_path)
 
         cleaned_text=clean_text(raw_text)
@@ -200,20 +198,24 @@ def process_pdfs(metadata_path,data_path,out_path):
         for entry in all_chunks:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-    print(f"✅ Saved {len(all_chunks)} chunks to {out_path}")
+    
 
         
 
 
 
 
-def main():
-
-    # process_pdfs("data/processed/metadata.json","data/raw","data/processed/chunks.jsonl")
-    process_pdfs("data/processed/metadata_recent.json","data/raw_recent","data/processed/chunks_recent.jsonl")
+def preprocess_papers(kind=[True,True]):
+    
+    if kind[0]:
+        print("preprocessing important papers")
+        process_pdfs("data/processed/metadata.json","data/raw","data/processed/chunks.jsonl")
+    if kind[1]:
+        print("preprocessing recent papers")
+        process_pdfs("data/processed/metadata_recent.json","data/raw_recent","data/processed/chunks_recent.jsonl")
 
 
 
 if __name__=="__main__":
-    main()
+    preprocess_papers()
 

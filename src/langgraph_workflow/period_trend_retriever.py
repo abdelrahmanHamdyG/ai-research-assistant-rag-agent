@@ -15,8 +15,8 @@ def period_trend_retriever_node(state: Dict[str, Any]):
 
     domains = intent_info.domains
     period = intent_info.period or 7
-    print(f"period is {period} domain is {domains}")
-    print("****************")
+    # print(f"period is {period} domain is {domains}")
+    # print("****************")
 
 
     target_date = get_target_day_date(period)

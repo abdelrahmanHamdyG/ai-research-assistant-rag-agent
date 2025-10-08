@@ -16,7 +16,7 @@ def topic_qa_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Retrieves relevant chunks from the vector DB and synthesizes a response.
     Updates `last_bot_response` in the state.
     """
-    print("it's topic_qa node")
+    # print("it's topic_qa node")
     llm = init_model()
 
     # Retrieve top 5 most similar chunks (adjust k as needed)

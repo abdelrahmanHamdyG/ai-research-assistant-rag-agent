@@ -23,11 +23,11 @@ def init_model(model: str = "llama-3.3-70b-versatile", temperature: float = 0.0)
 
 def paper_determining_node(state: Dict[str, Any]) -> Dict[str, Any]:
   
-    print("*********************************************")
-    print("we are determining the paper ")
-    print("*********************************************")
+    # #print("*********************************************")
+    # #print("we are determining the paper ")
+    # #print("*********************************************")
     if state["intent_info"].specific_paper_id is not None :
-        print("we already know the paper ")
+        # #print("we already know the paper ")
         return state
     else:
         paper_initial_title=state["intent_info"].specific_paper
@@ -40,7 +40,7 @@ def paper_determining_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
 
         candidates = []
-        print("candidate_metas is ",candidate_metas)
+        #print("candidate_metas is ",candidate_metas)
         for meta, abstr in zip(candidate_metas, candidate_texts):
             candidates.append({
                 "title": meta.get("title"),
@@ -51,9 +51,9 @@ def paper_determining_node(state: Dict[str, Any]) -> Dict[str, Any]:
         if match.paper_id.lower() != "null":
             state["intent_info"].specific_paper_id = match.paper_id
             state["intent_info"].specific_paper  = match.paper_title
-            print("*********************************************")
-            print(f"the paper_title is {match.paper_title}")
-            print("*********************************************")
+            #print("*********************************************")
+            #print(f"the paper_title is {match.paper_title}")
+            #print("*********************************************")
 
         else:
             state["intent_info"].specific_paper_id = None
@@ -73,15 +73,16 @@ def paper_details_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Use only the chunks of the identified paper to answer the user query.
     """
-    print("*********************************************")
-    print("We are getting the details of the node ")
-    print("*********************************************")
+    #print("*********************************************")
+    #print("We are getting the details of the node ")
+    #print("*********************************************")
     info = state["intent_info"]
-    print("info is ",info)
+    #print("info is ",info)
     
     if not info.specific_paper:
-        print("paper not identified yet\n")
+        #print("paper not identified yet\n")
         state["error"] = "Paper not identified yet."
+        state["chat_history"].append({"role":"assistant","content":"Sorry I couldn't find the paper"})
         return state
     
     
@@ -92,9 +93,9 @@ def paper_details_node(state: Dict[str, Any]) -> Dict[str, Any]:
     paper_text = "\n\n".join(chunks["documents"][0])
 
 
-    print("*********************************************")
-    print(paper_text)
-    print("*********************************************")
+    #print("*********************************************")
+    #print(paper_text)
+    #print("*********************************************")
 
     llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
     prompt = ChatPromptTemplate.from_template("""
@@ -194,15 +195,15 @@ If no match, return:
         "candidates": candidates_text
     })
 
-    print("***************************")
-    print("prompt_value is", prompt_value)
-    print("***************************")
+    # print("***************************")
+    # print("prompt_value is", prompt_value)
+    # print("***************************")
 
     parser = PydanticOutputParser(pydantic_object=PaperMatch)
 
     try:
         response = llm.invoke(prompt_value)
-        # print("LLM raw response:", response.content)
+        # #print("LLM raw response:", response.content)
 
         # Try to extract JSON if LLM added extra text
         json_match = re.search(r"\{.*\}", response.content, re.DOTALL)
@@ -210,7 +211,7 @@ If no match, return:
 
         result = parser.parse(clean_response)
     except Exception as e:
-        print("⚠️ Exception while parsing LLM output:", e)
+        #print("⚠️ Exception while parsing LLM output:", e)
         result = PaperMatch(paper_title="null", paper_id="null")
 
     return result

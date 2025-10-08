@@ -1,4 +1,3 @@
-import chromadb 
 import json
 from sentence_transformers import SentenceTransformer
 from itertools import islice
@@ -25,17 +24,20 @@ def date_str_to_int(date_str: str) -> int:
 
 
 
-def load_chuncks(file_path1="data/processed/chunks.jsonl",file_path2="data/processed/chunks_recent.jsonl"):
+def load_chuncks(file_path1="data/processed/chunks.jsonl",file_path2="data/processed/chunks_recent.jsonl",kind=[True,True]):
 
     
-    # with open(file_path1,"r",encoding="utf-8") as f:
-    #     for line in f:
-    #         yield json.loads(line)
+    if kind[0]:
+        #print(" storing chunks for important papers ")
+        with open(file_path1,"r",encoding="utf-8") as f:
+            for line in f:
+                yield json.loads(line)
 
-    print("Starting with chunks_recent")
-    with open(file_path2,"r",encoding="utf-8") as f:
-        for line in f:
-            yield json.loads(line)
+    if kind[1]:
+        #print(" storing chunks for recent papers ")
+        with open(file_path2,"r",encoding="utf-8") as f:
+            for line in f:
+                yield json.loads(line)
     
 def batched(iterable,batch_size=50):
 
@@ -48,12 +50,13 @@ def batched(iterable,batch_size=50):
 
 
 def load_embedding_model(model_name="sentence-transformers/all-MiniLM-L6-v2"):
-    print(f"🔄 Loading embedding model: {model_name}")
+    #print(f"🔄 Loading embedding model: {model_name}")
     model = SentenceTransformer(model_name)
     return model
 
 
 def init_chroma(db_path="embeddings", collection_name="paper"):
+        
     os.makedirs(db_path, exist_ok=True)
     client = PersistentClient(path=db_path)
     collection = client.get_or_create_collection(name=collection_name)
@@ -61,7 +64,7 @@ def init_chroma(db_path="embeddings", collection_name="paper"):
 
 
 
-def store_embedding():
+def store_embedding(kind):
 
     embedding_model=load_embedding_model()
 
@@ -69,7 +72,7 @@ def store_embedding():
     collection  =init_chroma()
     source_to_domain={}
 
-    for batch in batched(load_chuncks(),batch_size=50):
+    for batch in batched(load_chuncks(kind=kind),batch_size=50):
         ids, texts,metadatas =[],[],[]
 
 
@@ -110,7 +113,7 @@ def store_embedding():
         embeddings=embedding_model.encode(texts,show_progress_bar=True,convert_to_numpy=True)
 
         collection.upsert(ids=ids,embeddings=embeddings.tolist(),documents=texts,metadatas=metadatas)
-        print(f"stored {len(ids)} chunks ")
+        #print(f"stored {len(ids)} chunks ")
 
 
 
@@ -118,11 +121,11 @@ def store_embedding():
 
 
 
-def main():
-    store_embedding()
+def store_papers_embedding(kind=[True,True]):
+    store_embedding(kind)
 
 
 if __name__=="__main__":
-    main()
+    store_papers_embedding()
     
 
