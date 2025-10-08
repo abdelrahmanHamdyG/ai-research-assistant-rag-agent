@@ -73,7 +73,7 @@ GROQ_API_KEY=your_groq_api_key_here
 ### 4️⃣ Run the assistant
 
 ```bash
-python app.py
+python -m src.main
 ```
 
 ## 🧠 Tech Stack
